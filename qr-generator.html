@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Code Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    input, select { margin: 0.5em 0; padding: 4px; }
+    #qr { margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h1>QR Code Generator</h1>
+  <p>Paste your students CSV below:</p>
+  <textarea id="csvInput" rows="6" cols="60" placeholder="StudentID,StudentName,BusID\n12345,John Doe,A1\n..."></textarea><br>
+  <button onclick="loadStudents()">Load Students</button>
+  <div id="studentSelectContainer"></div>
+  <div id="qr"></div>
+
+  <script>
+    let students = [];
+    function parseCSV(csv) {
+      const lines = csv.trim().split('\n');
+      const headers = lines[0].split(',');
+      return lines.slice(1).map(line => {
+        const values = line.split(',');
+        const obj = {};
+        headers.forEach((h, i) => obj[h.trim()] = values[i].trim());
+        return obj;
+      });
+    }
+    function loadStudents() {
+      const csv = document.getElementById('csvInput').value;
+      students = parseCSV(csv);
+      renderStudentSelect();
+    }
+    function renderStudentSelect() {
+      if (!students.length) return document.getElementById('studentSelectContainer').innerHTML = '';
+      let html = '<label for="studentSelect">Select Student:</label> ';
+      html += '<select id="studentSelect" onchange="generateQR()">';
+      students.forEach((s, i) => {
+        html += `<option value='${i}'>${s.StudentName} (${s.StudentID}, Bus ${s.BusID})</option>`;
+      });
+      html += '</select>';
+      document.getElementById('studentSelectContainer').innerHTML = html;
+      generateQR();
+    }
+    function generateQR() {
+      const idx = document.getElementById('studentSelect').value;
+      const student = students[idx];
+      const qrData = JSON.stringify({ studentId: student.StudentID, busId: student.BusID });
+      // Create canvas first
+      document.getElementById('qr').innerHTML = `<canvas id='qr-canvas'></canvas><br><b>QR Data:</b> ${qrData}`;
+      const canvas = document.getElementById('qr-canvas');
+      QRCode.toCanvas(canvas, qrData, function (error) {
+        if (error) document.getElementById('qr').innerText = 'Error generating QR';
+      });
+    }
+  </script>
+</body>
+</html>

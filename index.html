@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>School Bus Attendance</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    .checked-in { background: #d4edda; }
+    button { padding: 4px 10px; }
+  </style>
+</head>
+<body>
+  <h1>School Bus Attendance</h1>
+  <p>Paste your Google Sheet CSV export below:</p>
+  <textarea id="csvInput" rows="8" cols="80" placeholder="Paste CSV here..."></textarea><br>
+  <button onclick="loadList()">Load List</button>
+  <div id="listContainer"></div>
+
+  <script>
+    let students = [];
+    function parseCSV(csv) {
+      const lines = csv.trim().split('\n');
+      const headers = lines[0].split(',');
+      return lines.slice(1).map(line => {
+        const values = line.split(',');
+        const obj = {};
+        headers.forEach((h, i) => obj[h.trim()] = values[i].trim());
+        return obj;
+      });
+    }
+    function loadList() {
+      const csv = document.getElementById('csvInput').value;
+      students = parseCSV(csv);
+      renderList();
+    }
+    function checkIn(idx) {
+      students[idx].checkedIn = true;
+      renderList();
+    }
+    function renderList() {
+      if (!students.length) return document.getElementById('listContainer').innerHTML = '';
+      let html = '<table><tr>';
+      Object.keys(students[0]).forEach(h => html += `<th>${h}</th>`);
+      html += '<th>Check-In</th></tr>';
+      students.forEach((s, i) => {
+        html += `<tr${s.checkedIn ? ' class=\"checked-in\"' : ''}>`;
+        Object.values(s).forEach(v => html += `<td>${v}</td>`);
+        html += `<td>` + (s.checkedIn ? '✔️' : `<button onclick=\"checkIn(${i})\">Check In</button>`) + `</td></tr>`;
+      });
+      html += '</table>';
+      document.getElementById('listContainer').innerHTML = html;
+    }
+  </script>
+</body>
+</html>

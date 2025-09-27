@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Code Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    #qr-reader { width: 300px; margin-top: 1em; }
+    #result { margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h1>QR Code Scanner</h1>
+  <div id="qr-reader"></div>
+  <div id="result"></div>
+  <script>
+    function onScanSuccess(decodedText, decodedResult) {
+      document.getElementById('result').innerHTML = `<b>Scanned Data:</b> ${decodedText}`;
+      try {
+        const data = JSON.parse(decodedText);
+        document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${data.studentId}<br><b>Bus ID:</b> ${data.busId}`;
+      } catch (e) {
+        document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
+      }
+    }
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "qr-reader", { fps: 10, qrbox: 250 }, false);
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
+</body>
+</html>
