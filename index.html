@@ -3,56 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <title>School Bus Attendance</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1em; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f0f0f0; }
-    .checked-in { background: #d4edda; }
-    button { padding: 4px 10px; }
-  </style>
 </head>
 <body>
   <h1>School Bus Attendance</h1>
-  <p>Paste your Google Sheet CSV export below:</p>
-  <textarea id="csvInput" rows="8" cols="80" placeholder="Paste CSV here..."></textarea><br>
-  <button onclick="loadList()">Load List</button>
-  <div id="listContainer"></div>
-
+  <ul>
+    <li><a href="qr-generator.html">QR Code Generator</a></li>
+    <li><a href="qr-scanner.html">QR Code Scanner</a></li>
+  </ul>
+  <hr>
+  <h2>Student List (Supabase)</h2>
+  <button onclick="fetchStudents()">Load Students from Supabase</button>
+  <div id="studentList"></div>
+  <h2>Today's Attendance</h2>
+  <button onclick="fetchAttendance()">Load Attendance</button>
+  <div id="attendanceList"></div>
   <script>
-    let students = [];
-    function parseCSV(csv) {
-      const lines = csv.trim().split('\n');
-      const headers = lines[0].split(',');
-      return lines.slice(1).map(line => {
-        const values = line.split(',');
-        const obj = {};
-        headers.forEach((h, i) => obj[h.trim()] = values[i].trim());
-        return obj;
-      });
+    // Replace with your Supabase project details
+    const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
+    const STUDENTS_TABLE = 'students';
+    const ATTENDANCE_TABLE = 'attendance';
+
+    function fetchStudents() {
+      fetch(`${SUPABASE_URL}/rest/v1/${STUDENTS_TABLE}?select=*`, {
+        headers: { 'apikey': SUPABASE_KEY }
+      })
+      .then(res => res.json())
+      .then(students => {
+        console.log('Fetched students:', students);
+        renderList(students);
+      })
+      .catch(() => document.getElementById('studentList').innerText = 'Failed to fetch students.');
     }
-    function loadList() {
-      const csv = document.getElementById('csvInput').value;
-      students = parseCSV(csv);
-      renderList();
+
+    function fetchAttendance() {
+      const today = new Date().toISOString().slice(0,10);
+      fetch(`${SUPABASE_URL}/rest/v1/${ATTENDANCE_TABLE}?select=*,students(*)&date=eq.${today}`, {
+        headers: {
+          'apikey': SUPABASE_KEY
+        }
+      })
+      .then(res => res.json())
+      .then(attendance => renderAttendance(attendance))
+      .catch(() => document.getElementById('attendanceList').innerText = 'Failed to fetch attendance.');
     }
-    function checkIn(idx) {
-      students[idx].checkedIn = true;
-      renderList();
-    }
-    function renderList() {
-      if (!students.length) return document.getElementById('listContainer').innerHTML = '';
-      let html = '<table><tr>';
-      Object.keys(students[0]).forEach(h => html += `<th>${h}</th>`);
-      html += '<th>Check-In</th></tr>';
-      students.forEach((s, i) => {
-        html += `<tr${s.checkedIn ? ' class=\"checked-in\"' : ''}>`;
-        Object.values(s).forEach(v => html += `<td>${v}</td>`);
-        html += `<td>` + (s.checkedIn ? '✔️' : `<button onclick=\"checkIn(${i})\">Check In</button>`) + `</td></tr>`;
+
+    function renderList(students) {
+      if (!students.length) {
+        document.getElementById('studentList').innerText = 'No students found.';
+        return;
+      }
+      let html = '<table border="1" cellpadding="5"><tr>';
+      html += '<th>ID</th><th>Name</th><th>Bus ID</th>';
+      html += '</tr>';
+      students.forEach(s => {
+        html += `<tr><td>${s.id}</td><td>${s.name}</td><td>${s.bus_id}</td></tr>`;
       });
       html += '</table>';
-      document.getElementById('listContainer').innerHTML = html;
+      document.getElementById('studentList').innerHTML = html;
+    }
+
+    function renderAttendance(attendance) {
+      if (!attendance.length) return document.getElementById('attendanceList').innerText = 'No attendance records found.';
+      let html = '<table border="1" cellpadding="5"><tr>';
+      html += '<th>Student Name</th><th>Bus ID</th><th>Date</th><th>Checked In</th>';
+      html += '</tr>';
+      attendance.forEach(a => {
+        html += `<tr><td>${a.students ? a.students.name : ''}</td><td>${a.students ? a.students.bus_id : ''}</td><td>${a.date}</td><td>${a.checked_in ? '✔️' : ''}</td></tr>`;
+      });
+      html += '</table>';
+      document.getElementById('attendanceList').innerHTML = html;
     }
   </script>
-</body>
-</html>
+
