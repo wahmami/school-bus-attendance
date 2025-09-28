@@ -50,7 +50,7 @@
               try {
                 await qrReader.start(
                   { facingMode: "environment" },
-                  { fps: 10, qrbox: 250 },
+                  { fps: 10, qrbox: 340 },
                   onScanSuccess,
                   errorMessage => {
                     document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${errorMessage}</span>`;
