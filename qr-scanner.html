@@ -142,8 +142,7 @@
         const attendance = {
           studentID: studentId,
           date: today,
-          checked: true,
-          bus_id: selectedBus
+          checked: true
         };
         fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
           method: 'POST',
