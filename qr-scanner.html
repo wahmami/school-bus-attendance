@@ -14,8 +14,10 @@
   <h1>QR Code Scanner</h1>
   <label for="busSelect"><b>Select Bus ID:</b></label>
   <select id="busSelect"></select>
-  <div id="qr-reader"></div>
-  <div id="result"></div>
+  <div style="display: flex; gap: 2em; align-items: flex-start;">
+    <div id="qr-reader"></div>
+    <div id="result"></div>
+  </div>
   <div id="debug"></div>
   <h2>Unchecked Students</h2>
   <ul id="uncheckedList"></ul>
@@ -129,13 +131,25 @@
       }
 
       function onScanSuccess(decodedText, decodedResult) {
+        if (window.scanPaused) return;
         document.getElementById('result').innerHTML = `<b>Scanned Data:</b> ${decodedText}`;
         let studentId = null;
-        // Always treat the QR code as a plain student ID string
         if (decodedText && decodedText.trim().length > 0) {
           studentId = decodedText.trim();
         }
         if (studentId) {
+          // Play sound
+          let audio = document.getElementById('scan-audio');
+          if (!audio) {
+            audio = document.createElement('audio');
+            audio.id = 'scan-audio';
+            audio.src = 'https://cdn.jsdelivr.net/gh/naudio/wav-samples/notify.wav';
+            document.body.appendChild(audio);
+          }
+          audio.currentTime = 0;
+          audio.play();
+          window.scanPaused = true;
+          setTimeout(() => { window.scanPaused = false; }, 2000);
           // Fetch student info from Supabase
           fetch(`${SUPABASE_URL}/rest/v1/students?id=eq.${encodeURIComponent(studentId)}`, {
             headers: {
