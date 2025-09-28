@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>QR Code Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+  <script src="html5-qrcode.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 2em; }
     #qr-reader { width: 300px; margin-top: 1em; }
@@ -15,44 +15,53 @@
   <div id="qr-reader"></div>
   <div id="result"></div>
   <script>
-    let lastStudent = null;
-    function onScanSuccess(decodedText, decodedResult) {
-      document.getElementById('result').innerHTML = `<b>Scanned Data:</b> ${decodedText}`;
-      try {
-        const data = JSON.parse(decodedText);
-        if (data.id && data.name) {
-          lastStudent = data;
-          document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${data.id}<br><b>Name:</b> ${data.name}`;
-          document.getElementById('result').innerHTML += `<br><button id='checkinBtn'>Check In</button>`;
-          setTimeout(() => {
-            document.getElementById('checkinBtn').onclick = function() {
-              checkInStudent(data.id);
-            };
-          }, 100);
-        } else {
+    document.addEventListener('DOMContentLoaded', function() {
+      let lastStudent = null;
+      function onScanSuccess(decodedText, decodedResult) {
+        document.getElementById('result').innerHTML = `<b>Scanned Data:</b> ${decodedText}`;
+        try {
+          const data = JSON.parse(decodedText);
+          if (data.id && data.name) {
+            lastStudent = data;
+            document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${data.id}<br><b>Name:</b> ${data.name}`;
+            document.getElementById('result').innerHTML += `<br><button id='checkinBtn'>Check In</button>`;
+            setTimeout(() => {
+              document.getElementById('checkinBtn').onclick = function() {
+                checkInStudent(data.id);
+              };
+            }, 100);
+          } else {
+            document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
+          }
+        } catch (e) {
           document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
         }
-      } catch (e) {
-        document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
       }
-    }
 
-    function checkInStudent(studentId) {
-      // Placeholder for Supabase attendance integration
-      alert(`Attendance checked in for student ID: ${studentId}`);
-      // TODO: Add fetch to Supabase attendance table here
-    }
-    // Use Html5Qrcode for direct camera scanning
-    const qrReader = new Html5Qrcode("qr-reader");
-    qrReader.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: 250
-      },
-      onScanSuccess
-    ).catch(err => {
-      document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${err}</span>`;
+      function checkInStudent(studentId) {
+        // Placeholder for Supabase attendance integration
+        alert(`Attendance checked in for student ID: ${studentId}`);
+        // TODO: Add fetch to Supabase attendance table here
+      }
+
+      if (window.Html5Qrcode) {
+        const qrReader = new Html5Qrcode("qr-reader");
+        qrReader.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: 250
+          },
+          onScanSuccess,
+          errorMessage => {
+            document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${errorMessage}</span>`;
+          }
+        ).catch(err => {
+          document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${err}</span>`;
+        });
+      } else {
+        document.getElementById('result').innerHTML = `<span style='color:red'>QR code library failed to load.</span>`;
+      }
     });
   </script>
 </body>
