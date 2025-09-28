@@ -24,30 +24,9 @@
     // Supabase credentials (replace with your actual values)
     const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
-    document.getElementById('loadBtn').onclick = async function() {
-      try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/students`, {
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json',
-          }
-        });
-        const text = await res.text();
-        let students;
-        try {
-          students = JSON.parse(text);
-        } catch (e) {
-          console.error('Failed to parse students JSON:', text);
-          students = [];
-        }
-        console.log('Supabase fetch status:', res.status);
-        console.log('Supabase fetch response:', students);
-        renderQRCodes(students);
-      } catch (err) {
-        console.error('Supabase fetch error:', err);
-      }
-    };
+    // document.getElementById('loadBtn').onclick = async function() {
+    //   ...fetching code removed...
+    // };
     function renderQRCodes(students) {
   const container = document.getElementById('qrContainer');
   container.innerHTML = '';
