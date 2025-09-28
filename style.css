@@ -101,6 +101,8 @@ button:hover {
   padding: 0.5em 0.6em;
   text-align: left;
   font-size: 1em;
+  max-width: 220px;
+  word-break: break-word;
 }
 #uncheckedList th {
   background: #eaf3ff;
