@@ -105,16 +105,34 @@
 
       function onScanSuccess(decodedText, decodedResult) {
         document.getElementById('result').innerHTML = `<b>Scanned Data:</b> ${decodedText}`;
+        let studentId = null;
         try {
           const data = JSON.parse(decodedText);
-          if (data.id && data.name) {
-            lastStudent = data;
-            document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${data.id}<br><b>Name:</b> ${data.name}`;
-            checkInStudent(data.id);
-          } else {
-            document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
-          }
+          if (data.id) studentId = data.id;
         } catch (e) {
+          // Not JSON, treat as plain ID
+          if (/^\d+$/.test(decodedText)) studentId = decodedText;
+        }
+        if (studentId) {
+          // Fetch student info from Supabase
+          fetch(`${SUPABASE_URL}/rest/v1/students?id=eq.${studentId}`, {
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          })
+          .then(res => res.json())
+          .then(students => {
+            if (students.length) {
+              const student = students[0];
+              lastStudent = student;
+              document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${student.id}<br><b>Name:</b> ${student.name}`;
+              checkInStudent(student.id);
+            } else {
+              document.getElementById('result').innerHTML += '<br><span style="color:red">Student not found</span>';
+            }
+          });
+        } else {
           document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
         }
       }
