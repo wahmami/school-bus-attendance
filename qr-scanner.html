@@ -50,7 +50,7 @@
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
-          body: JSON.stringify(attendance)
+          body: JSON.stringify([attendance])
         })
         .then(res => res.json())
         .then(data => {
