@@ -77,9 +77,9 @@
               renderUncheckedList();
               return;
             }
-            // Use correct key for studentID in attendance
-            const checkedIds = new Set(attendance.map(a => a.studentID || a.studentid));
-            unchecked = students.filter(s => !checkedIds.has(s.id));
+            // Robustly match student IDs in attendance
+            const checkedIds = new Set(attendance.map(a => String(a.studentID ?? a.student_id ?? a.studentid)));
+            unchecked = students.filter(s => !checkedIds.has(String(s.id)));
             renderUncheckedList();
           });
         });
