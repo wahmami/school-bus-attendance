@@ -106,12 +106,9 @@
       function onScanSuccess(decodedText, decodedResult) {
         document.getElementById('result').innerHTML = `<b>Scanned Data:</b> ${decodedText}`;
         let studentId = null;
-        try {
-          const data = JSON.parse(decodedText);
-          if (data.id) studentId = data.id;
-        } catch (e) {
-          // Not JSON, treat as plain ID
-          if (decodedText && decodedText.trim().length > 0) studentId = decodedText.trim();
+        // Always treat the QR code as a plain student ID string
+        if (decodedText && decodedText.trim().length > 0) {
+          studentId = decodedText.trim();
         }
         if (studentId) {
           // Fetch student info from Supabase
