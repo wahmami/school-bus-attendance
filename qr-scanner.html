@@ -51,7 +51,7 @@
         .then(records => {
           if (records.length > 0) {
             document.getElementById('result').innerHTML += `<br><span style='color:orange'>Already checked in today!</span>`;
-            if (qrReader) qrReader.stop();
+            // Do NOT stop scanner here, allow scanning again
           } else {
             const attendance = {
               studentid: studentId,
@@ -79,7 +79,7 @@
           }
         })
         .catch(err => {
-          document.getElementById('result').innerHTML = `<br><span style='color:red'>Attendance check-in failed.</span>`;
+          document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed.</span>`;
         });
       }
 
