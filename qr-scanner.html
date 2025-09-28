@@ -24,12 +24,7 @@
           if (data.id && data.name) {
             lastStudent = data;
             document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${data.id}<br><b>Name:</b> ${data.name}`;
-            document.getElementById('result').innerHTML += `<br><button id='checkinBtn'>Check In</button>`;
-            setTimeout(() => {
-              document.getElementById('checkinBtn').onclick = function() {
-                checkInStudent(data.id);
-              };
-            }, 100);
+            checkInStudent(data.id);
           } else {
             document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
           }
@@ -39,9 +34,31 @@
       }
 
       function checkInStudent(studentId) {
-        // Placeholder for Supabase attendance integration
-        alert(`Attendance checked in for student ID: ${studentId}`);
-        // TODO: Add fetch to Supabase attendance table here
+        // Supabase attendance integration
+        const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
+        const attendance = {
+          student_id: studentId,
+          date: new Date().toISOString().slice(0, 10),
+          checked_in: true
+        };
+        fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify([attendance])
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('result').innerHTML += `<br><span style='color:green'>Attendance checked in!</span>`;
+        })
+        .catch(err => {
+          document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed.</span>`;
+        });
       }
 
       if (window.Html5Qrcode) {
