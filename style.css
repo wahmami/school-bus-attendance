@@ -72,6 +72,14 @@ button:hover {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(42,93,159,0.06);
   padding: 1em;
+  min-width: 340px;
+  min-height: 340px;
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #result {
@@ -92,11 +100,3 @@ button:hover {
   border: 1px solid #e0e6ed;
   padding: 0.6em;
   text-align: left;
-}
-#uncheckedList th {
-  background: #eaf3ff;
-  color: #2a5d9f;
-}
-#uncheckedList tr:nth-child(even) {
-  background: #f7f9fb;
-}
