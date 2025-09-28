@@ -37,34 +37,53 @@
         // Supabase attendance integration
         const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
-        const attendance = {
-          studentID: studentId,
-          date: new Date().toISOString().slice(0, 10),
-          checked: true
-        };
-        fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
-          method: 'POST',
+        const today = new Date().toISOString().slice(0, 10);
+        // Check for duplicate before inserting
+        fetch(`${SUPABASE_URL}/rest/v1/attendance?studentID=eq.${studentId}&date=eq.${today}`, {
           headers: {
             'apikey': SUPABASE_KEY,
             'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify([attendance])
-        })
-        .then(async res => {
-          const text = await res.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch (e) {
-            data = text;
+            'Content-Type': 'application/json'
           }
-          document.getElementById('result').innerHTML += `<br><b>Supabase response:</b> <pre>${JSON.stringify(data, null, 2)}</pre>`;
-          if (res.ok && Array.isArray(data) && data.length > 0) {
-            document.getElementById('result').innerHTML += `<br><span style='color:green'>Attendance checked in!</span>`;
+        })
+        .then(res => res.json())
+        .then(records => {
+          if (records.length > 0) {
+            document.getElementById('result').innerHTML += `<br><span style='color:orange'>Already checked in today!</span>`;
           } else {
-            document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed.</span>`;
+            const attendance = {
+              studentID: studentId,
+              date: today,
+              checked: true
+            };
+            fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              },
+              body: JSON.stringify([attendance])
+            })
+            .then(async res => {
+              const text = await res.text();
+              let data;
+              try {
+                data = JSON.parse(text);
+              } catch (e) {
+                data = text;
+              }
+              document.getElementById('result').innerHTML += `<br><b>Supabase response:</b> <pre>${JSON.stringify(data, null, 2)}</pre>`;
+              if (res.ok && Array.isArray(data) && data.length > 0) {
+                document.getElementById('result').innerHTML += `<br><span style='color:green'>Attendance checked in!</span>`;
+              } else {
+                document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed.</span>`;
+              }
+            })
+            .catch(err => {
+              document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed: ${err}</span>`;
+            });
           }
         })
         .catch(err => {
