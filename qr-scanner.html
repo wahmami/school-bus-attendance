@@ -111,11 +111,11 @@
           if (data.id) studentId = data.id;
         } catch (e) {
           // Not JSON, treat as plain ID
-          if (/^\d+$/.test(decodedText)) studentId = decodedText;
+          if (decodedText && decodedText.trim().length > 0) studentId = decodedText.trim();
         }
         if (studentId) {
           // Fetch student info from Supabase
-          fetch(`${SUPABASE_URL}/rest/v1/students?id=eq.${studentId}`, {
+          fetch(`${SUPABASE_URL}/rest/v1/students?id=eq.${encodeURIComponent(studentId)}`, {
             headers: {
               'apikey': SUPABASE_KEY,
               'Authorization': `Bearer ${SUPABASE_KEY}`,
@@ -129,11 +129,14 @@
               document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${student.id}<br><b>Name:</b> ${student.name}`;
               checkInStudent(student.id);
             } else {
-              document.getElementById('result').innerHTML += '<br><span style="color:red">Student not found</span>';
+              document.getElementById('result').innerHTML += `<br><span style='color:red'>Student not found for ID: ${studentId}</span>`;
             }
+          })
+          .catch(err => {
+            document.getElementById('result').innerHTML += `<br><span style='color:red'>Error fetching student: ${err}</span>`;
           });
         } else {
-          document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
+          document.getElementById('result').innerHTML += `<br><span style='color:red'>Invalid QR format: ${decodedText}</span>`;
         }
       }
 
