@@ -12,11 +12,97 @@
 </head>
 <body>
   <h1>QR Code Scanner</h1>
+  <label for="busSelect"><b>Select Bus ID:</b></label>
+  <select id="busSelect"></select>
   <div id="qr-reader"></div>
   <div id="result"></div>
+  <div id="debug"></div>
+  <h2>Unchecked Students</h2>
+  <ul id="uncheckedList"></ul>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       let lastStudent = null;
+      let students = [];
+      let unchecked = [];
+      let selectedBus = null;
+      const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
+
+      // Fetch bus IDs and populate dropdown
+      fetch(`${SUPABASE_URL}/rest/v1/students?select=bus_id`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+          console.log('Fetched bus_id data:', data);
+        const busSet = new Set(data.map(s => s.bus_id).filter(Boolean));
+          console.log('Available bus IDs:', Array.from(busSet));
+        const busSelect = document.getElementById('busSelect');
+        busSelect.innerHTML = '<option value="">Select Bus</option>' + Array.from(busSet).map(b => `<option value="${b}">${b}</option>`).join('');
+        busSelect.onchange = function() {
+          selectedBus = busSelect.value;
+          if (selectedBus) fetchUncheckedStudents();
+          else document.getElementById('uncheckedList').innerHTML = '';
+        };
+      });
+
+      function fetchUncheckedStudents() {
+        const today = new Date().toISOString().slice(0, 10);
+        // Get all students for selected bus
+        fetch(`${SUPABASE_URL}/rest/v1/students?bus_id=eq.${selectedBus}`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+          }
+        })
+        .then(res => res.json())
+        .then(allStudents => {
+          students = allStudents;
+          // Fetch attendance for today only
+          const today = new Date().toISOString().slice(0, 10);
+          fetch(`${SUPABASE_URL}/rest/v1/attendance?date=eq.${today}`, {
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            }
+          })
+          .then(res => res.json())
+          .then(attendance => {
+            if (!Array.isArray(attendance)) {
+              console.error('Attendance fetch did not return an array:', attendance);
+              document.getElementById('uncheckedList').innerHTML = '<span style="color:red">Attendance fetch failed. Check column names and query.</span>';
+              renderUncheckedList();
+              return;
+            }
+            // Use correct key for studentID in attendance
+            const checkedIds = new Set(attendance.map(a => a.studentID || a.studentid));
+            unchecked = students.filter(s => !checkedIds.has(s.id));
+            renderUncheckedList();
+          });
+        });
+      }
+
+      function renderUncheckedList() {
+        const ul = document.getElementById('uncheckedList');
+        if (!unchecked.length) {
+          ul.innerHTML = '<span>No unchecked students</span>';
+          return;
+        }
+        let html = '<table border="1" cellpadding="5"><tr>';
+        Object.keys(unchecked[0]).forEach(h => html += `<th>${h}</th>`);
+        html += '</tr>';
+        unchecked.forEach(s => {
+          html += '<tr>';
+          Object.values(s).forEach(v => html += `<td>${v}</td>`);
+          html += '</tr>';
+        });
+        html += '</table>';
+        ul.innerHTML = html;
+      }
+
       function onScanSuccess(decodedText, decodedResult) {
         document.getElementById('result').innerHTML = `<b>Scanned Data:</b> ${decodedText}`;
         try {
@@ -34,56 +120,39 @@
       }
 
       function checkInStudent(studentId) {
-        // Supabase attendance integration
-        const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
         const today = new Date().toISOString().slice(0, 10);
-        // Check for duplicate before inserting
-        fetch(`${SUPABASE_URL}/rest/v1/attendance?studentID=eq.${studentId}&date=eq.${today}`, {
+        const attendance = {
+          studentID: studentId,
+          date: today,
+          checked: true,
+          bus_id: selectedBus
+        };
+        fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
+          method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
             'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify([attendance])
         })
-        .then(res => res.json())
-        .then(records => {
-          if (records.length > 0) {
-            document.getElementById('result').innerHTML += `<br><span style='color:orange'>Already checked in today!</span>`;
+        .then(async res => {
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (e) {
+            data = text;
+          }
+          document.getElementById('result').innerHTML += `<br><b>Supabase response:</b> <pre>${JSON.stringify(data, null, 2)}</pre>`;
+          if (res.ok && Array.isArray(data) && data.length > 0) {
+            document.getElementById('result').innerHTML += `<br><span style='color:green'>Attendance checked in!</span>`;
+            // Remove student from unchecked list
+            unchecked = unchecked.filter(s => s.id !== studentId);
+            renderUncheckedList();
           } else {
-            const attendance = {
-              studentID: studentId,
-              date: today,
-              checked: true
-            };
-            fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
-              method: 'POST',
-              headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation'
-              },
-              body: JSON.stringify([attendance])
-            })
-            .then(async res => {
-              const text = await res.text();
-              let data;
-              try {
-                data = JSON.parse(text);
-              } catch (e) {
-                data = text;
-              }
-              document.getElementById('result').innerHTML += `<br><b>Supabase response:</b> <pre>${JSON.stringify(data, null, 2)}</pre>`;
-              if (res.ok && Array.isArray(data) && data.length > 0) {
-                document.getElementById('result').innerHTML += `<br><span style='color:green'>Attendance checked in!</span>`;
-              } else {
-                document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed.</span>`;
-              }
-            })
-            .catch(err => {
-              document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed: ${err}</span>`;
-            });
+            document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed.</span>`;
           }
         })
         .catch(err => {
