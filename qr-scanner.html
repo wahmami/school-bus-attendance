@@ -15,18 +15,45 @@
   <div id="qr-reader"></div>
   <div id="result"></div>
   <script>
+    let lastStudent = null;
     function onScanSuccess(decodedText, decodedResult) {
       document.getElementById('result').innerHTML = `<b>Scanned Data:</b> ${decodedText}`;
       try {
         const data = JSON.parse(decodedText);
-        document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${data.studentId}<br><b>Bus ID:</b> ${data.busId}`;
+        if (data.id && data.name) {
+          lastStudent = data;
+          document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${data.id}<br><b>Name:</b> ${data.name}`;
+          document.getElementById('result').innerHTML += `<br><button id='checkinBtn'>Check In</button>`;
+          setTimeout(() => {
+            document.getElementById('checkinBtn').onclick = function() {
+              checkInStudent(data.id);
+            };
+          }, 100);
+        } else {
+          document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
+        }
       } catch (e) {
         document.getElementById('result').innerHTML += '<br><span style="color:red">Invalid QR format</span>';
       }
     }
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-      "qr-reader", { fps: 10, qrbox: 250 }, false);
-    html5QrcodeScanner.render(onScanSuccess);
+
+    function checkInStudent(studentId) {
+      // Placeholder for Supabase attendance integration
+      alert(`Attendance checked in for student ID: ${studentId}`);
+      // TODO: Add fetch to Supabase attendance table here
+    }
+    // Use Html5Qrcode for direct camera scanning
+    const qrReader = new Html5Qrcode("qr-reader");
+    qrReader.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: 250
+      },
+      onScanSuccess
+    ).catch(err => {
+      document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${err}</span>`;
+    });
   </script>
 </body>
 </html>
