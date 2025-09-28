@@ -3,58 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <title>QR Code Generator</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    input, select { margin: 0.5em 0; padding: 4px; }
-    #qr { margin-top: 1em; }
-  </style>
 </head>
 <body>
   <h1>QR Code Generator</h1>
-  <p>Paste your students CSV below:</p>
-  <textarea id="csvInput" rows="6" cols="60" placeholder="StudentID,StudentName,BusID\n12345,John Doe,A1\n..."></textarea><br>
-  <button onclick="loadStudents()">Load Students</button>
-  <div id="studentSelectContainer"></div>
-  <div id="qr"></div>
-
+  <nav>
+    <a href="index.html">Home</a> |
+    <a href="qr-scanner.html">QR Code Scanner</a>
+  </nav>
+  <hr>
+  <button id="loadBtn">Load Students & Generate QR</button>
+  <div id="qrContainer" class="qr-container"></div>
+  <style>
+    .qr-container { display: flex; flex-wrap: wrap; gap: 2em; }
+    .student-card { border: 1px solid #ccc; padding: 1em; text-align: center; width: 200px; }
+    .student-name { font-weight: bold; margin-bottom: 0.5em; }
+    button { margin-top: 0.5em; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
-    let students = [];
-    function parseCSV(csv) {
-      const lines = csv.trim().split('\n');
-      const headers = lines[0].split(',');
-      return lines.slice(1).map(line => {
-        const values = line.split(',');
-        const obj = {};
-        headers.forEach((h, i) => obj[h.trim()] = values[i].trim());
-        return obj;
+    // Supabase credentials (replace with your actual values)
+    const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
+    document.getElementById('loadBtn').onclick = async function() {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/students`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+        }
       });
-    }
-    function loadStudents() {
-      const csv = document.getElementById('csvInput').value;
-      students = parseCSV(csv);
-      renderStudentSelect();
-    }
-    function renderStudentSelect() {
-      if (!students.length) return document.getElementById('studentSelectContainer').innerHTML = '';
-      let html = '<label for="studentSelect">Select Student:</label> ';
-      html += '<select id="studentSelect" onchange="generateQR()">';
-      students.forEach((s, i) => {
-        html += `<option value='${i}'>${s.StudentName} (${s.StudentID}, Bus ${s.BusID})</option>`;
-      });
-      html += '</select>';
-      document.getElementById('studentSelectContainer').innerHTML = html;
-      generateQR();
-    }
-    function generateQR() {
-      const idx = document.getElementById('studentSelect').value;
-      const student = students[idx];
-      const qrData = JSON.stringify({ studentId: student.StudentID, busId: student.BusID });
-      // Create canvas first
-      document.getElementById('qr').innerHTML = `<canvas id='qr-canvas'></canvas><br><b>QR Data:</b> ${qrData}`;
-      const canvas = document.getElementById('qr-canvas');
-      QRCode.toCanvas(canvas, qrData, function (error) {
-        if (error) document.getElementById('qr').innerText = 'Error generating QR';
+      const students = await res.json();
+      renderQRCodes(students);
+    };
+    function renderQRCodes(students) {
+      const container = document.getElementById('qrContainer');
+      container.innerHTML = '';
+      students.forEach(student => {
+        const card = document.createElement('div');
+        card.className = 'student-card';
+        const name = document.createElement('div');
+        name.className = 'student-name';
+        name.textContent = student.name;
+        card.appendChild(name);
+        const qrDiv = document.createElement('div');
+        qrDiv.id = `qr-${student.id}`;
+        card.appendChild(qrDiv);
+        new QRCode(qrDiv, {
+          text: JSON.stringify({ id: student.id, name: student.name }),
+          width: 128,
+          height: 128,
+        });
+        container.appendChild(card);
       });
     }
   </script>
