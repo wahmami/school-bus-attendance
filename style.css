@@ -72,11 +72,11 @@ button:hover {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(42,93,159,0.06);
   padding: 1em;
-  min-width: 340px;
-  min-height: 340px;
+  min-width: 420px;
+  min-height: 420px;
   width: 100%;
-  max-width: 480px;
-  height: auto;
+  max-width: 600px;
+  height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,5 +98,15 @@ button:hover {
 }
 #uncheckedList th, #uncheckedList td {
   border: 1px solid #e0e6ed;
-  padding: 0.6em;
+  padding: 0.5em 0.6em;
   text-align: left;
+  font-size: 1em;
+}
+#uncheckedList th {
+  background: #eaf3ff;
+  color: #2a5d9f;
+  font-size: 1em;
+}
+#uncheckedList tr:nth-child(even) {
+  background: #f7f9fb;
+}
