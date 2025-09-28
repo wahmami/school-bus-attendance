@@ -38,7 +38,7 @@
     function renderQRCodes(students) {
       const container = document.getElementById('qrContainer');
       container.innerHTML = '';
-      students.forEach(student => {
+      students.forEach((student, idx) => {
         const card = document.createElement('div');
         card.className = 'student-card';
         const name = document.createElement('div');
@@ -46,7 +46,7 @@
         name.textContent = student.name;
         card.appendChild(name);
         const qrDiv = document.createElement('div');
-        qrDiv.id = `qr-${student.id}`;
+        qrDiv.id = `qr-${student.id}-${idx}`;
         card.appendChild(qrDiv);
         new QRCode(qrDiv, {
           text: JSON.stringify({ id: student.id, name: student.name }),
