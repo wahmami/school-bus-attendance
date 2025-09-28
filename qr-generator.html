@@ -3,218 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QR Code Scanner</title>
-  <script src="./html5-qrcode.min.js"></script>
+  <title>QR Code Generator</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>QR Code Scanner</h1>
-  <label for="busSelect"><b>Select Bus ID:</b></label>
-  <select id="busSelect"></select>
-  <div style="display: flex; gap: 2em; align-items: flex-start;">
-    <div id="qr-reader"></div>
-    <div id="result"></div>
-  </div>
-  <div id="debug"></div>
-  <h2>Unchecked Students</h2>
-  <ul id="uncheckedList"></ul>
+  <h1>QR Code Generator</h1>
+  <nav>
+    <a href="index.html">Home</a> |
+    <a href="qr-scanner.html">QR Code Scanner</a>
+  </nav>
+  <hr>
+  <button id="loadBtn">Load Students & Generate QR</button>
+  <div id="qrContainer" class="qr-container"></div>
+  <style>
+    .qr-container { display: flex; flex-wrap: wrap; gap: 2em; }
+    .student-card { border: 1px solid #ccc; padding: 1em; text-align: center; width: 200px; }
+    .student-name { font-weight: bold; margin-bottom: 0.5em; }
+    button { margin-top: 0.5em; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      let lastStudent = null;
-      let students = [];
-      let unchecked = [];
-      let selectedBus = null;
-      const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
-      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
-
-      let qrReader = null;
-      // Fetch bus IDs and populate dropdown
-      fetch(`${SUPABASE_URL}/rest/v1/students?select=bus_id`, {
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        const busSet = new Set(data.map(s => s.bus_id).filter(Boolean));
-        const busSelect = document.getElementById('busSelect');
-        busSelect.innerHTML = '<option value="">Select Bus</option>' + Array.from(busSet).map(b => `<option value="${b}">${b}</option>`).join('');
-        busSelect.onchange = async function() {
-          selectedBus = busSelect.value;
-          if (selectedBus) {
-            fetchUncheckedStudents();
-            // Start camera if not already started
-            if (window.Html5Qrcode && !qrReader) {
-              qrReader = new Html5Qrcode("qr-reader");
-              try {
-                await qrReader.start(
-                  { facingMode: "environment" },
-                  { fps: 10, qrbox: 250 },
-                  onScanSuccess,
-                  errorMessage => {
-                    document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${errorMessage}</span>`;
-                  }
-                );
-              } catch (err) {
-                document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${err}</span>`;
-              }
-            }
-          } else {
-            document.getElementById('uncheckedList').innerHTML = '';
-            // Stop camera if running
-            if (qrReader) {
-              qrReader.stop().then(() => {
-                qrReader.clear();
-                qrReader = null;
-              });
-            }
-          }
-        };
-      });
-
-      function fetchUncheckedStudents() {
-        const today = new Date().toISOString().slice(0, 10);
-        // Get all students for selected bus
-        fetch(`${SUPABASE_URL}/rest/v1/students?bus_id=eq.${selectedBus}`, {
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-          }
-        })
-        .then(res => res.json())
-        .then(allStudents => {
-          students = allStudents;
-          // Fetch attendance for today only
-          const today = new Date().toISOString().slice(0, 10);
-          fetch(`${SUPABASE_URL}/rest/v1/attendance?date=eq.${today}`, {
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-            }
-          })
-          .then(res => res.json())
-          .then(attendance => {
-            if (!Array.isArray(attendance)) {
-              console.error('Attendance fetch did not return an array:', attendance);
-              document.getElementById('uncheckedList').innerHTML = '<span style="color:red">Attendance fetch failed. Check column names and query.</span>';
-              renderUncheckedList();
-              return;
-            }
-            // Robustly match student IDs in attendance
-            const checkedIds = new Set(attendance.map(a => String(a.studentID ?? a.student_id ?? a.studentid)));
-            unchecked = students.filter(s => !checkedIds.has(String(s.id)));
-            renderUncheckedList();
-          });
-        });
-      }
-
-      function renderUncheckedList() {
-        const ul = document.getElementById('uncheckedList');
-        if (!unchecked.length) {
-          ul.innerHTML = '<span>No unchecked students</span>';
-          return;
-        }
-        let html = '<table border="1" cellpadding="5"><tr>';
-        Object.keys(unchecked[0]).forEach(h => html += `<th>${h}</th>`);
-        html += '</tr>';
-        unchecked.forEach(s => {
-          html += '<tr>';
-          Object.values(s).forEach(v => html += `<td>${v}</td>`);
-          html += '</tr>';
-        });
-        html += '</table>';
-        ul.innerHTML = html;
-      }
-
-      function onScanSuccess(decodedText, decodedResult) {
-        if (window.scanPaused) return;
-        document.getElementById('result').innerHTML = `<b>Scanned Data:</b> ${decodedText}`;
-        let studentId = null;
-        if (decodedText && decodedText.trim().length > 0) {
-          studentId = decodedText.trim();
-        }
-        if (studentId) {
-          // Play sound
-          let audio = document.getElementById('scan-audio');
-          if (!audio) {
-            audio = document.createElement('audio');
-            audio.id = 'scan-audio';
-            audio.src = 'https://cdn.jsdelivr.net/gh/naudio/wav-samples/notify.wav';
-            document.body.appendChild(audio);
-          }
-          audio.currentTime = 0;
-          audio.play();
-          window.scanPaused = true;
-          setTimeout(() => { window.scanPaused = false; }, 2000);
-          // Fetch student info from Supabase
-          fetch(`${SUPABASE_URL}/rest/v1/students?id=eq.${encodeURIComponent(studentId)}`, {
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-            }
-          })
-          .then(res => res.json())
-          .then(students => {
-            if (students.length) {
-              const student = students[0];
-              lastStudent = student;
-              document.getElementById('result').innerHTML += `<br><b>Student ID:</b> ${student.id}<br><b>Name:</b> ${student.name}`;
-              checkInStudent(student.id);
-            } else {
-              document.getElementById('result').innerHTML += `<br><span style='color:red'>Student not found for ID: ${studentId}</span>`;
-            }
-          })
-          .catch(err => {
-            document.getElementById('result').innerHTML += `<br><span style='color:red'>Error fetching student: ${err}</span>`;
-          });
-        } else {
-          document.getElementById('result').innerHTML += `<br><span style='color:red'>Invalid QR format: ${decodedText}</span>`;
-        }
-      }
-
-      function checkInStudent(studentId) {
-        const today = new Date().toISOString().slice(0, 10);
-        const attendance = {
-          studentID: studentId,
-          date: today,
-          checked: true
-        };
-        fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
-          method: 'POST',
+    // Supabase credentials (replace with your actual values)
+    const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
+    document.getElementById('loadBtn').onclick = async function() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/students`, {
           headers: {
             'apikey': SUPABASE_KEY,
             'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify([attendance])
-        })
-        .then(async res => {
-          const text = await res.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch (e) {
-            data = text;
           }
-          document.getElementById('result').innerHTML += `<br><b>Supabase response:</b> <pre>${JSON.stringify(data, null, 2)}</pre>`;
-          if (res.ok && Array.isArray(data) && data.length > 0) {
-            document.getElementById('result').innerHTML += `<br><span style='color:green'>Attendance checked in!</span>`;
-            // Remove student from unchecked list
-            unchecked = unchecked.filter(s => s.id !== studentId);
-            renderUncheckedList();
-          } else {
-            document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed.</span>`;
-          }
-        })
-        .catch(err => {
-          document.getElementById('result').innerHTML += `<br><span style='color:red'>Attendance check-in failed: ${err}</span>`;
         });
+        const students = await res.json();
+        renderQRCodes(students);
+      } catch (err) {
+        console.error('Supabase fetch error:', err);
       }
-
-      // Camera will be started only after bus selection
-    });
+    };
+    function renderQRCodes(students) {
+  const container = document.getElementById('qrContainer');
+  container.innerHTML = '';
+  console.log('Rendering students:', students.map(s => `${s.id}: ${s.name}`));
+  students.forEach((student, idx) => {
+        const card = document.createElement('div');
+        card.className = 'student-card';
+        const name = document.createElement('div');
+        name.className = 'student-name';
+        name.textContent = student.name;
+        card.appendChild(name);
+        const qrDiv = document.createElement('div');
+        qrDiv.id = `qr-${student.id}-${idx}`;
+        card.appendChild(qrDiv);
+        new QRCode(qrDiv, {
+          text: String(student.id),
+          width: 128,
+          height: 128,
+        });
+        container.appendChild(card);
+      });
+    }
   </script>
 </body>
 </html>
