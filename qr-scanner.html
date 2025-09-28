@@ -9,10 +9,10 @@
 </head>
 <body>
   <h1>QR Code Scanner</h1>
-  <label for="busSelect"><b>Select Bus ID:</b></label>
-  <select id="busSelect"></select>
-  <div style="display: flex; gap: 2em; align-items: flex-start;">
+  <div style="display: flex; gap: 2em; align-items: flex-start; flex-direction: column;">
     <div id="qr-reader"></div>
+    <label for="busSelect" style="margin-top:1em;font-size:1.2em;"><b>Select Bus ID:</b></label>
+    <select id="busSelect" style="font-size:1.2em;padding:0.5em 1em;width:100%;max-width:340px;"></select>
     <div id="result"></div>
   </div>
   <div id="debug"></div>
