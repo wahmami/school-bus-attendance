@@ -28,6 +28,7 @@
       const SUPABASE_URL = 'https://lwdgtnmasuxphgydxppb.supabase.co';
       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZGd0bm1hc3V4cGhneWR4cHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTMyMjEsImV4cCI6MjA3NDU4OTIyMX0.eolrB6h-YUhFAm2NCTprz84yi2Cve-9AfTGmHCrOJ4c';
 
+      let qrReader = null;
       // Fetch bus IDs and populate dropdown
       fetch(`${SUPABASE_URL}/rest/v1/students?select=bus_id`, {
         headers: {
@@ -37,15 +38,39 @@
       })
       .then(res => res.json())
       .then(data => {
-          console.log('Fetched bus_id data:', data);
         const busSet = new Set(data.map(s => s.bus_id).filter(Boolean));
-          console.log('Available bus IDs:', Array.from(busSet));
         const busSelect = document.getElementById('busSelect');
         busSelect.innerHTML = '<option value="">Select Bus</option>' + Array.from(busSet).map(b => `<option value="${b}">${b}</option>`).join('');
-        busSelect.onchange = function() {
+        busSelect.onchange = async function() {
           selectedBus = busSelect.value;
-          if (selectedBus) fetchUncheckedStudents();
-          else document.getElementById('uncheckedList').innerHTML = '';
+          if (selectedBus) {
+            fetchUncheckedStudents();
+            // Start camera if not already started
+            if (window.Html5Qrcode && !qrReader) {
+              qrReader = new Html5Qrcode("qr-reader");
+              try {
+                await qrReader.start(
+                  { facingMode: "environment" },
+                  { fps: 10, qrbox: 250 },
+                  onScanSuccess,
+                  errorMessage => {
+                    document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${errorMessage}</span>`;
+                  }
+                );
+              } catch (err) {
+                document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${err}</span>`;
+              }
+            }
+          } else {
+            document.getElementById('uncheckedList').innerHTML = '';
+            // Stop camera if running
+            if (qrReader) {
+              qrReader.stop().then(() => {
+                qrReader.clear();
+                qrReader = null;
+              });
+            }
+          }
         };
       });
 
@@ -177,24 +202,7 @@
         });
       }
 
-      if (window.Html5Qrcode) {
-        const qrReader = new Html5Qrcode("qr-reader");
-        qrReader.start(
-          { facingMode: "environment" },
-          {
-            fps: 10,
-            qrbox: 250
-          },
-          onScanSuccess,
-          errorMessage => {
-            document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${errorMessage}</span>`;
-          }
-        ).catch(err => {
-          document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${err}</span>`;
-        });
-      } else {
-        document.getElementById('result').innerHTML = `<span style='color:red'>QR code library failed to load.</span>`;
-      }
+      // Camera will be started only after bus selection
     });
   </script>
 </body>
