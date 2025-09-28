@@ -1,0 +1,102 @@
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f7f9fb;
+  color: #222;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2 {
+  color: #2a5d9f;
+  margin-top: 1.5em;
+}
+
+nav {
+  margin-bottom: 1em;
+}
+nav a {
+  color: #2a5d9f;
+  text-decoration: none;
+  margin-right: 1em;
+  font-weight: 500;
+}
+nav a:hover {
+  text-decoration: underline;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e0e6ed;
+  margin: 2em 0;
+}
+
+button {
+  background: #2a5d9f;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(42,93,159,0.08);
+  transition: background 0.2s;
+}
+button:hover {
+  background: #17406b;
+}
+
+.qr-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2em;
+  margin-top: 2em;
+}
+.student-card {
+  border: 1px solid #e0e6ed;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1em;
+  text-align: center;
+  width: 200px;
+  box-shadow: 0 2px 8px rgba(42,93,159,0.06);
+}
+.student-name {
+  font-weight: bold;
+  margin-bottom: 0.5em;
+  color: #2a5d9f;
+}
+
+#qr-reader {
+  border: 1px solid #e0e6ed;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(42,93,159,0.06);
+  padding: 1em;
+}
+
+#result {
+  background: #eaf3ff;
+  border-radius: 8px;
+  padding: 1em;
+  margin-left: 1em;
+  min-width: 220px;
+  box-shadow: 0 2px 8px rgba(42,93,159,0.06);
+}
+
+#uncheckedList table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1em;
+}
+#uncheckedList th, #uncheckedList td {
+  border: 1px solid #e0e6ed;
+  padding: 0.6em;
+  text-align: left;
+}
+#uncheckedList th {
+  background: #eaf3ff;
+  color: #2a5d9f;
+}
+#uncheckedList tr:nth-child(even) {
+  background: #f7f9fb;
+}
