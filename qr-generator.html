@@ -36,9 +36,10 @@
       renderQRCodes(students);
     };
     function renderQRCodes(students) {
-      const container = document.getElementById('qrContainer');
-      container.innerHTML = '';
-      students.forEach((student, idx) => {
+  const container = document.getElementById('qrContainer');
+  container.innerHTML = '';
+  console.log('Rendering students:', students.map(s => `${s.id}: ${s.name}`));
+  students.forEach((student, idx) => {
         const card = document.createElement('div');
         card.className = 'student-card';
         const name = document.createElement('div');
@@ -49,7 +50,7 @@
         qrDiv.id = `qr-${student.id}-${idx}`;
         card.appendChild(qrDiv);
         new QRCode(qrDiv, {
-          text: JSON.stringify({ id: student.id, name: student.name }),
+          text: String(student.id),
           width: 128,
           height: 128,
         });
