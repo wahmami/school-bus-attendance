@@ -50,7 +50,7 @@
               try {
                 await qrReader.start(
                   { facingMode: "environment" },
-                  { fps: 10, qrbox: { width: 800, height: 800 }   },
+                  { fps: 10, qrbox: { width: 400, height: 400 }   },
                   onScanSuccess,
                   errorMessage => {
                     document.getElementById('result').innerHTML = `<span style='color:red'>Camera error: ${errorMessage}</span>`;
@@ -135,16 +135,17 @@
           studentId = decodedText.trim();
         }
         if (studentId) {
-          // Play sound
-          let audio = document.getElementById('scan-audio');
-          if (!audio) {
-            audio = document.createElement('audio');
-            audio.id = 'scan-audio';
-            audio.src = 'https://cdn.jsdelivr.net/gh/naudio/wav-samples/notify.wav';
-            document.body.appendChild(audio);
+          // Play a loud beep sound
+          let beep = document.getElementById('scan-beep');
+          if (!beep) {
+            beep = document.createElement('audio');
+            beep.id = 'scan-beep';
+            beep.src = 'https://cdn.pixabay.com/download/audio/2022/03/19/audio_b1e725b098.mp3?filename=beep-6-96243.mp3'; // Stable beep sound
+            beep.volume = 1.0;
+            document.body.appendChild(beep);
           }
-          audio.currentTime = 0;
-          audio.play();
+          beep.currentTime = 0;
+          beep.play();
           window.scanPaused = true;
           setTimeout(() => { window.scanPaused = false; }, 2000);
           // Fetch student info from Supabase
@@ -218,5 +219,3 @@
   </script>
 </body>
 </html>
-
-
